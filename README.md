@@ -28,20 +28,23 @@ const method = new ValidatedMethod({
 
 #### Permission object for allow
 
+```js
 {
     roles,              //array of strings
     group,              //string
     allow               //function that accepts the methods input and returns a boolean
 }
+```
 
 #### Permission object for deny
 
+```js
 {
     roles,              //array of strings
     group,              //string
     deny                //function that accepts the methods input and returns a boolean
 }
-
+```
 
 ## Examples
 
