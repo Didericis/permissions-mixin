@@ -7,4 +7,4 @@ machine:
     - npm install -g spacejam
 test:
   override:
-    - spacejam test-packages --driver-package practicalmeteor:mocha-console-reporter --release 1.2.1 --use-system-phantomjs ./
+    - spacejam test-packages --use-system-phantomjs --mocha ./
