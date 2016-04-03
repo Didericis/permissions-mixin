@@ -1,4 +1,4 @@
-# didericis:permissions-mixin
+# didericis:permissions-mixin [![Circle CI](https://circleci.com/gh/Didericis/permissions-mixin.svg?style=svg)](https://circleci.com/gh/Didericis/permissions-mixin)
 
 This is a mixin for meteor's [mdg:validated-method](https://github.com/meteor/validated-method). It uses the [alanning:roles](https://github.com/alanning/meteor-roles) package and allows you to define what users with what roles are allowed or denied use of your method, and under what conditions. 
 
