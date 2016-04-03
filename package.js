@@ -19,7 +19,7 @@ Package.onTest(function (api) {
       'ecmascript',
       'accounts-password',
       'alanning:roles@1.2.0',
-      'practicalmeteor:mocha@2.1.0_8',
+      'practicalmeteor:mocha@2.1.0_5',
       'practicalmeteor:chai@2.1.0_1',
       'aldeed:simple-schema@1.4.0',
       'mdg:validated-method@1.0.2',
