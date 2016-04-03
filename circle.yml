@@ -7,4 +7,4 @@ machine:
     - npm install -g spacejam
 test:
   override:
-    - spacejam test-packages --use-system-phantomjs --mocha ./
+    - spacejam test-packages ./ --use-system-phantomjs --mocha --release 1.2.1
