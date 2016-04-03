@@ -335,6 +335,7 @@ if (Meteor.isClient) {
                     assert.equal(server, simulation);
                     done();
                 });
+                assert.equal(1, 2);
             });
 
             it('can call "allowBasicIfBlah" when input is "blah"', (done) => {

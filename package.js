@@ -10,7 +10,7 @@ Package.onUse(function(api) {
   api.versionsFrom('1.2.1');
   api.use(['ecmascript', 'check', 'underscore']);
   api.use('alanning:roles@1.2.0');
-  api.addFiles('permissions-mixin.js');
+  api.addFiles('permissions-mixin2.js');
   api.export('PermissionsMixin');
 });
 
@@ -19,11 +19,10 @@ Package.onTest(function (api) {
       'ecmascript',
       'accounts-password',
       'alanning:roles@1.2.0',
-      'practicalmeteor:mocha@2.1.0_5',
+      'practicalmeteor:mocha@2.1.0_8',
       'practicalmeteor:chai@2.1.0_1',
       'aldeed:simple-schema@1.4.0',
       'mdg:validated-method@1.0.2',
-      'xolvio:cleaner',
       'mongo',
       'didericis:permissions-mixin'
     ]);
