@@ -76,7 +76,9 @@ This will allow:
 * A user of role `basic` and group `Roles.GLOBAL_GROUP` when the input is {text: `blah`}
 * A user of role `admin` and group `Roles.GLOBAL_GROUP` for all inputs
 
-All other users will be denied
+All other users will be denied.
+
+To allow all users, set allow to `true` instead of an array of permissions objects.
 
 #### Deny
 
