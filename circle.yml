@@ -3,7 +3,7 @@ machine:
     version: 0.10.40
   post:
     - curl https://install.meteor.com | /bin/sh
-    - npm install -g phantomjs-prebuilt
+    - npm install -g phantomjs
     - npm install -g spacejam
 test:
   override:
