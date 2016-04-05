@@ -462,7 +462,8 @@ if (Meteor.isClient) {
             });
         });
 
-        it('can call "denyBasicIfBlahAndFancy" when input is "blah"', () => {
+        it('can call "denyBasicIfBlahAndFancy" when input is "blah"',
+            (done) => {
             const simulation = denyBasicIfBlahAndFancy.call({text: 'blah'},
                 (err, server) => {
                 assert.isDefined(server);
@@ -472,7 +473,8 @@ if (Meteor.isClient) {
             });
         });
 
-        it('can call "denyBasicIfBlahAndFancy" when input is "sample"', () => {
+        it('can call "denyBasicIfBlahAndFancy" when input is "sample"',
+            (done) => {
             const simulation = denyBasicIfBlahAndFancy.call({text: 'sample'},
                 (err, server) => {
                 assert.isDefined(server);
