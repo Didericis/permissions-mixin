@@ -2,18 +2,6 @@
 PermissionsMixin = function(methodOptions) {
     const DEFINITION_ERROR = 'PermssionsMixin.Definition';
 
-    const checkDependencies = function checkDependencies() {
-        if (!Package['mdg:validated-method']) {
-            throw new Meteor.Error('dependency',
-                'This mixin requires the mdg:validated-method package');
-        };
-
-        if (!Package['alanning:roles']) {
-            throw new Meteor.Error('dependency',
-                'This mixin requires the alanning:roles package');
-        };
-    }
-
     const checkMethodOption = function checkMethodOption(methodOptions,
         methodOptionName) {
         if (methodOptions[methodOptionName]) {
@@ -110,7 +98,6 @@ PermissionsMixin = function(methodOptions) {
         }
     };
 
-    checkDependencies();
     checkMethodOption(methodOptions, 'allow');
     checkMethodOption(methodOptions, 'deny');
 
