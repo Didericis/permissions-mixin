@@ -1,10 +1,21 @@
 machine:
   node:
     version: 0.10.40
-  post:
-    - curl https://install.meteor.com | /bin/sh
-    - npm install -g phantomjs
-    - npm install -g spacejam
+
+dependencies:
+  cache_directories:
+    - "~/.meteor"
+    - ~/nvm/v0.10.40/lib/node_modules/phantomjs
+    - ~/nvm/v0.10.40/bin/phantomjs
+    - ~/nvm/v0.10.40/lib/node_modules/spacejam
+    - ~/nvm/v0.10.40/bin/spacejam
+
+  pre:
+    - if [ -d ~/.meteor ]; then sudo ln -s ~/.meteor/meteor /usr/local/bin/meteor; fi
+    - if [ ! -e ~/.meteor/meteor ]; then curl https://install.meteor.com | sh; fi
+    - if [ ! -e ~/nvm/v0.10.40/bin/phantomjs ]; then npm install -g phantomjs; fi
+    - if [ ! -e ~/nvm/v0.10.40/bin/spacejam ]; then npm install -g spacejam; fi
+
 test:
   override:
-    - spacejam test-packages ./ --use-system-phantomjs --mocha --release 1.2.1
+    - spacejam test-packages ./ --use-system-phantomjs --mocha --release 1.3.1
