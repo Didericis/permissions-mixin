@@ -10,6 +10,7 @@ Package.onUse(function(api) {
   api.versionsFrom('1.2.1');
   api.use(['ecmascript', 'check', 'underscore']);
   api.use('alanning:roles@1.2.0');
+  api.use('mdg:validated-method');
   api.addFiles('permissions-mixin.js');
   api.export('PermissionsMixin');
 });
