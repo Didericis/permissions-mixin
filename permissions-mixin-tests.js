@@ -16,10 +16,15 @@ const BASICUSER = {
     roles: ['basic']
 };
 
+const USER = {
+    username: 'user',
+    password: 'password'
+};
+
 const testCollection = new Mongo.Collection('test');
 
 const allowAdminMethod = new ValidatedMethod({
-    name: 'AdminMethod',
+    name: 'allowAdminMethod',
     mixins: [PermissionsMixin],
     allow: [{
         roles: ['admin'],
@@ -34,7 +39,7 @@ const allowAdminMethod = new ValidatedMethod({
 });
 
 const allowBasicMethod = new ValidatedMethod({
-    name: 'BasicMethod',
+    name: 'allowBasicMethod',
     mixins: [PermissionsMixin],
     allow: [{
         roles: ['basic', 'admin'],
@@ -49,7 +54,7 @@ const allowBasicMethod = new ValidatedMethod({
 });
 
 const allowBasicIfBlah = new ValidatedMethod({
-    name: 'AllowBasicIfBlah',
+    name: 'allowBasicIfBlah',
     mixins: [PermissionsMixin],
     allow: [{
         roles: ['basic'],
@@ -68,7 +73,7 @@ const allowBasicIfBlah = new ValidatedMethod({
 });
 
 const allowFancyMethod = new ValidatedMethod({
-    name: 'FancyMethod',
+    name: 'allowFancyMethod',
     mixins: [PermissionsMixin],
     allow: [{
         roles: ['fancy', 'admin'],
@@ -83,7 +88,7 @@ const allowFancyMethod = new ValidatedMethod({
 });
 
 const noAllowOrDenyMethod = new ValidatedMethod({
-    name: 'NoMethod',
+    name: 'noAllowOrDenyMethod',
     mixins: [PermissionsMixin],
     validate: new SimpleSchema({
         text: { type: String }
@@ -94,7 +99,7 @@ const noAllowOrDenyMethod = new ValidatedMethod({
 });
 
 const nestedAllowAdminMethod = new ValidatedMethod({
-    name: 'NestedMethod',
+    name: 'nestedAllowAdminMethod',
     mixins: [PermissionsMixin],
     allow: [{
         roles: ['fancy', 'admin', 'basic'],
@@ -109,7 +114,7 @@ const nestedAllowAdminMethod = new ValidatedMethod({
 });
 
 const allowAnyMethod = new ValidatedMethod({
-    name: 'AllowAny',
+    name: 'allowAnyMethod',
     mixins: [PermissionsMixin],
     allow: true,
     validate: new SimpleSchema({
@@ -121,7 +126,7 @@ const allowAnyMethod = new ValidatedMethod({
 });
 
 const denyBasicMethod = new ValidatedMethod({
-    name: 'DenyBasicMethod',
+    name: 'denyBasicMethod',
     mixins: [PermissionsMixin],
     deny: [{
         roles: ['basic'],
@@ -136,7 +141,7 @@ const denyBasicMethod = new ValidatedMethod({
 });
 
 const denyBasicIfBlahAndFancy = new ValidatedMethod({
-    name: 'DenyBasicIfBlah',
+    name: 'denyBasicIfBlahAndFancy',
     mixins: [PermissionsMixin],
     deny: [{
         roles: ['basic'],
@@ -154,27 +159,91 @@ const denyBasicIfBlahAndFancy = new ValidatedMethod({
     }
 });
 
-Meteor.methods({
-  'test.resetDatabase': () => {
-      testCollection.remove({});
-  },
-  'test.createUsers': (users) => {
-      if (Meteor.isServer) {
-          if (Meteor.users.find().count() > 0) { Meteor.users.remove({}); }
+const allowLoggedIn = new ValidatedMethod({
+    name: 'allowLoggedIn',
+    mixins: [PermissionsMixin],
+    allow: [{
+        roles: true,
+        group: true
+    }],
+    validate: new SimpleSchema({
+        text: { type: String }
+    }).validator(),
+    run({text}) {
+        return testCollection.insert({text: text});
+    }
+});
 
-          users.forEach(({username, password, roles}) => {
-              const userId = Accounts.createUser({
+const allowLoggedInSpecialDef = new ValidatedMethod({
+    name: 'allowLoggedInSpecialDef',
+    mixins: [PermissionsMixin],
+    allow: PermissionsMixin.LoggedIn,
+    validate: new SimpleSchema({
+        text: { type: String }
+    }).validator(),
+    run({text}) {
+        return testCollection.insert({text: text});
+    }
+});
+
+Meteor.methods({
+    'test.resetDatabase': () => {
+        testCollection.remove({});
+    },
+    'test.createUsers': (users) => {
+        if (Meteor.isServer) {
+            if (Meteor.users.find().count() > 0) { Meteor.users.remove({}); }
+
+            users.forEach(({username, password, roles}) => {
+                const userId = Accounts.createUser({
                   username: username,
                   password: password
-              });
+                });
 
-              if (roles) {
-                  Roles.addUsersToRoles(userId, roles, Roles.GLOBAL_GROUP);
-              }
-          });
-      }
-  }
+                if (roles) {
+                    Roles.addUsersToRoles(userId, roles, Roles.GLOBAL_GROUP);
+                }
+            });
+        }
+    }
 });
+
+const canCallWhen = function canCallWhen(method, input) {
+    it(`can call "${method.name}" when input is ${input}`, (done) => {
+        const simulation = method.call({text: input},
+            (err, server) => {
+            assert.isDefined(server);
+            assert.isDefined(simulation);
+            assert.equal(server, simulation);
+            done();
+        });
+    });
+};
+
+const cannotCallWhen = function cannotCallWhen(method, input) {
+    it(`CANNOT call "${method.name}" when input is ${input}`, () => {
+        assert.throws(() => {
+            method.call({text: input});
+        }, method.permissionsError);
+    });
+};
+
+const setupUserTest = function setupUser(user) {
+    before((done) => {
+        Meteor.call('test.createUsers', [user], () => {
+            Meteor.loginWithPassword(user.username,
+                user.password, done);
+        });
+    });
+
+    beforeEach((done) => {
+        Meteor.call('test.resetDatabase', () => { done(); });
+    });
+};
+
+const tearDownUserTest = function tearDownUserTest(user) {
+    after((done) => { Meteor.logout(done); });
+}
 
 describe('No users', () => {
     beforeEach((done) => {
@@ -274,310 +343,95 @@ describe('Bad definitions', () => {
 
 if (Meteor.isClient) {
     describe('BASICUSER', () => {
-        before((done) => {
-            if (Meteor.isClient) {
-                Meteor.logout(() => {
-                    Meteor.call('test.createUsers', [BASICUSER], () => {
-                        Meteor.loginWithPassword(BASICUSER.username,
-                            BASICUSER.password, done);
-                    });
-                });
-            }
-            if (Meteor.isServer) {
-                done();
-            }
-        });
+        setupUserTest(BASICUSER);
 
-        beforeEach((done) => {
-            Meteor.call('test.resetDatabase', () => { done(); });
-        });
+        cannotCallWhen(allowAdminMethod, 'sample');
+        cannotCallWhen(nestedAllowAdminMethod, 'sample');
+        cannotCallWhen(allowFancyMethod, 'sample');
+        cannotCallWhen(denyBasicMethod, 'sample');
+        canCallWhen(allowBasicMethod, 'sample');
+        canCallWhen(allowAnyMethod, 'sample');
+        canCallWhen(allowBasicIfBlah, 'blah');
+        cannotCallWhen(allowBasicIfBlah, 'sample');
+        canCallWhen(denyBasicIfBlahAndFancy, 'sample');
+        cannotCallWhen(denyBasicIfBlahAndFancy, 'blah');
+        canCallWhen(allowLoggedIn, 'sample');
+        canCallWhen(allowLoggedInSpecialDef, 'sample');
 
-        if (Meteor.isClient) {
-            it('CANNOT call "allowAdminMethod"', () => {
-                assert.throws(() => {
-                    allowAdminMethod.call({text: 'sample'});
-                }, allowAdminMethod.permissionsError);
-            });
-
-            it('CANNOT call "nestedAllowAdminMethod"', () => {
-                assert.throws(() => {
-                    nestedAllowAdminMethod.call({text: 'sample'});
-                }, allowAdminMethod.permissionsError);
-            });
-
-            it('CANNOT call "allowFancyMethod"', () => {
-                assert.throws(() => {
-                    allowFancyMethod.call({text: 'sample'});
-                }, allowFancyMethod.permissionsError);
-            });
-
-            it('CANNOT call "denyBasicMethod"', () => {
-                assert.throws(() => {
-                    denyBasicMethod.call({text: 'sample'});
-                }, denyBasicMethod.permissionsError);
-            });
-
-            it('can call "allowBasicMethod"', (done) => {
-                const simulation = allowBasicMethod.call({text: 'sample'},
-                    (err, server) => {
-                    assert.isDefined(server);
-                    assert.isDefined(simulation);
-                    assert.equal(server, simulation);
-                    done();
-                });
-            });
-
-            it('can call "allowAnyMethod"', (done) => {
-                const simulation = allowAnyMethod.call({text: 'sample'},
-                    (err, server) => {
-                    assert.isDefined(server);
-                    assert.isDefined(simulation);
-                    assert.equal(server, simulation);
-                    done();
-                });
-            });
-
-            it('can call "allowBasicIfBlah" when input is "blah"', (done) => {
-                const simulation = allowBasicIfBlah.call({text: 'blah'},
-                    (err, server) => {
-                    assert.isDefined(server);
-                    assert.isDefined(simulation);
-                    assert.equal(server, simulation);
-                    done();
-                });
-            });
-
-            it('CANNOT call "allowBasicIfBlah" when input is "sample"', () => {
-                assert.throws(() => {
-                    allowBasicIfBlah.call({text: 'sample'});
-                }, allowBasicIfBlah.permissionsError);
-            });
-
-            it('can call "denyBasicIfBlahAndFancy" when input is "sample"',
-                (done) => {
-                const simulation = denyBasicIfBlahAndFancy.call(
-                    {text: 'sample'}, (err, server) => {
-                    assert.isDefined(server);
-                    assert.isDefined(simulation);
-                    assert.equal(server, simulation);
-                    done();
-                });
-            });
-
-            it('CANNOT call "denyBasicIfBlahAndFancy" when input is "blah"',
-                () => {
-                assert.throws(() => {
-                    denyBasicIfBlahAndFancy.call({text: 'blah'});
-                }, denyBasicIfBlahAndFancy.permissionsError);
-            });
-        }
+        tearDownUserTest();
     });
 
     describe('ADMIN', () => {
-        before((done) => {
-            if (Meteor.isClient) {
-                Meteor.logout(() => {
-                    Meteor.call('test.createUsers', [ADMIN], () => {
-                        Meteor.loginWithPassword(ADMIN.username,
-                            ADMIN.password, done);
-                    });
-                });
-            }
-            if (Meteor.isServer) {
-                done();
-            }
-        });
+        setupUserTest(ADMIN);
 
-        beforeEach((done) => {
-            Meteor.call('test.resetDatabase', () => { done(); });
-        });
+        canCallWhen(allowAdminMethod, 'sample');
+        canCallWhen(nestedAllowAdminMethod, 'sample');
+        canCallWhen(allowFancyMethod, 'sample');
+        canCallWhen(denyBasicMethod, 'sample');
+        canCallWhen(allowBasicMethod, 'sample');
+        canCallWhen(allowAnyMethod, 'sample');
+        canCallWhen(allowBasicIfBlah, 'blah');
+        canCallWhen(allowBasicIfBlah, 'sample');
+        canCallWhen(denyBasicIfBlahAndFancy, 'sample');
+        canCallWhen(allowLoggedIn, 'sample');
+        canCallWhen(allowLoggedInSpecialDef, 'sample');
 
-        it('can call "allowAdminMethod"', (done) => {
-            const simulation = allowAdminMethod.call({text: 'sample'},
-                (err, server) => {
-                assert.isDefined(server);
-                assert.isDefined(simulation);
-                assert.equal(server, simulation);
-                done();
-            });
-        });
-
-        it('can call "nestedAllowAdminMethod"', (done) => {
-            const simulation = nestedAllowAdminMethod.call({text: 'sample'},
-                (err, server) => {
-                assert.isDefined(server);
-                assert.isDefined(simulation);
-                assert.equal(server, simulation);
-                done();
-            });
-        });
-
-        it('can call "allowFancyMethod"', (done) => {
-            const simulation = allowFancyMethod.call({text: 'sample'},
-                (err, server) => {
-                assert.isDefined(server);
-                assert.isDefined(simulation);
-                assert.equal(server, simulation);
-                done();
-            });
-        });
-
-        it('can call "denyBasicMethod"', (done) => {
-            const simulation = denyBasicMethod.call({text: 'sample'},
-                (err, server) => {
-                assert.isDefined(server);
-                assert.isDefined(simulation);
-                assert.equal(server, simulation);
-                done();
-            });
-        });
-
-        it('can call "allowBasicMethod"', (done) => {
-            const simulation = allowBasicMethod.call({text: 'sample'},
-                (err, server) => {
-                assert.isDefined(server);
-                assert.isDefined(simulation);
-                assert.equal(server, simulation);
-                done();
-            });
-        });
-
-        it('can call "allowAnyMethod"', (done) => {
-            const simulation = allowAnyMethod.call({text: 'sample'},
-                (err, server) => {
-                assert.isDefined(server);
-                assert.isDefined(simulation);
-                assert.equal(server, simulation);
-                done();
-            });
-        });
-
-        it('can call "allowBasicIfBlah" if text is sample', (done) => {
-            const simulation = allowBasicIfBlah.call({text: 'sample'},
-                (err, server) => {
-                assert.isDefined(server);
-                assert.isDefined(simulation);
-                assert.equal(server, simulation);
-                done();
-            });
-        });
-
-        it('can call "denyBasicIfBlahAndFancy" when input is "blah"', () => {
-            const simulation = denyBasicIfBlahAndFancy.call({text: 'blah'},
-                (err, server) => {
-                assert.isDefined(server);
-                assert.isDefined(simulation);
-                assert.equal(server, simulation);
-                done();
-            });
-        });
-
-        it('can call "denyBasicIfBlahAndFancy" when input is "sample"', () => {
-            const simulation = denyBasicIfBlahAndFancy.call({text: 'sample'},
-                (err, server) => {
-                assert.isDefined(server);
-                assert.isDefined(simulation);
-                assert.equal(server, simulation);
-                done();
-            });
-        });
+        tearDownUserTest();
     });
 
     describe('FANCYUSER', () => {
-        before((done) => {
-            if (Meteor.isClient) {
-                Meteor.logout(() => {
-                    Meteor.call('test.createUsers', [FANCYUSER], () => {
-                        Meteor.loginWithPassword(FANCYUSER.username,
-                            FANCYUSER.password, done);
-                    });
-                });
-            }
-            if (Meteor.isServer) {
-                done();
-            }
-        });
+        setupUserTest(FANCYUSER);
 
-        beforeEach((done) => {
-            Meteor.call('test.resetDatabase', () => { done(); });
-        });
+        cannotCallWhen(allowAdminMethod, 'sample');
+        cannotCallWhen(nestedAllowAdminMethod, 'sample');
+        canCallWhen(allowFancyMethod, 'sample');
+        cannotCallWhen(denyBasicMethod, 'sample');
+        canCallWhen(allowBasicMethod, 'sample');
+        canCallWhen(allowAnyMethod, 'sample');
+        canCallWhen(allowBasicIfBlah, 'blah');
+        cannotCallWhen(allowBasicIfBlah, 'sample');
+        cannotCallWhen(denyBasicIfBlahAndFancy, 'blah');
+        cannotCallWhen(denyBasicIfBlahAndFancy, 'sample');
+        canCallWhen(allowLoggedIn, 'sample');
+        canCallWhen(allowLoggedInSpecialDef, 'sample');
 
-        it('CANNOT call "allowAdminMethod"', () => {
-            assert.throws(() => {
-                allowAdminMethod.call({text: 'sample'});
-            }, 'PermissionsMixin.NotAllowed');
-        });
+        tearDownUserTest();
+    });
 
-        it('CANNOT call "nestedAllowAdminMethod"', () => {
-            assert.throws(() => {
-                nestedAllowAdminMethod.call({text: 'sample'});
-            }, allowAdminMethod.permissionsError);
-        });
+    describe('USER', () => {
+        setupUserTest(USER);
 
-        it('can call "allowFancyMethod"', (done) => {
-            const simulation = allowFancyMethod.call({text: 'sample'},
-                (err, server) => {
-                assert.isDefined(server);
-                assert.isDefined(simulation);
-                assert.equal(server, simulation);
-                done();
-            });
-        });
+        cannotCallWhen(allowAdminMethod, 'sample');
+        cannotCallWhen(nestedAllowAdminMethod, 'sample');
+        cannotCallWhen(allowFancyMethod, 'sample');
+        canCallWhen(denyBasicMethod, 'sample');
+        cannotCallWhen(allowBasicMethod, 'sample');
+        canCallWhen(allowAnyMethod, 'sample');
+        cannotCallWhen(allowBasicIfBlah, 'blah');
+        cannotCallWhen(allowBasicIfBlah, 'sample');
+        canCallWhen(denyBasicIfBlahAndFancy, 'blah');
+        canCallWhen(denyBasicIfBlahAndFancy, 'sample');
+        canCallWhen(allowLoggedIn, 'sample');
+        canCallWhen(allowLoggedInSpecialDef, 'sample');
 
-        it('CANNOT call "denyBasicMethod"', () => {
-            assert.throws(() => {
-                denyBasicMethod.call({text: 'sample'});
-            }, denyBasicMethod.permissionsError);
-        });
+        tearDownUserTest();
+    });
 
-        it('can call "allowBasicMethod"', (done) => {
-            const simulation = allowBasicMethod.call({text: 'sample'},
-                (err, server) => {
-                assert.isDefined(server);
-                assert.isDefined(simulation);
-                assert.equal(server, simulation);
-                done();
-            });
-        });
+    describe('NO USER', () => {
+        cannotCallWhen(allowAdminMethod, 'sample');
+        cannotCallWhen(nestedAllowAdminMethod, 'sample');
+        cannotCallWhen(allowFancyMethod, 'sample');
+        cannotCallWhen(denyBasicMethod, 'sample');
+        cannotCallWhen(allowBasicMethod, 'sample');
+        canCallWhen(allowAnyMethod, 'sample');
+        cannotCallWhen(allowBasicIfBlah, 'blah');
+        cannotCallWhen(allowBasicIfBlah, 'sample');
+        cannotCallWhen(denyBasicIfBlahAndFancy, 'blah');
+        cannotCallWhen(denyBasicIfBlahAndFancy, 'sample');
+        cannotCallWhen(allowLoggedIn, 'sample');
+        cannotCallWhen(allowLoggedInSpecialDef, 'sample');
 
-        it('can call "allowAnyMethod"', (done) => {
-            const simulation = allowAnyMethod.call({text: 'sample'},
-                (err, server) => {
-                assert.isDefined(server);
-                assert.isDefined(simulation);
-                assert.equal(server, simulation);
-                done();
-            });
-        });
-
-        it('can call "allowBasicIfBlah" when input is "blah"', (done) => {
-            const simulation = allowBasicIfBlah.call({text: 'blah'},
-                (err, server) => {
-                assert.isDefined(server);
-                assert.isDefined(simulation);
-                assert.equal(server, simulation);
-                done();
-            });
-        });
-
-        it('CANNOT call "allowBasicIfBlah" when input is "sample"', () => {
-            assert.throws(() => {
-                allowBasicIfBlah.call({text: 'sample'});
-            }, allowBasicIfBlah.permissionsError);
-        });
-
-        it('CANNOT call "denyBasicIfBlahAndFancy" when input is "blah"', () => {
-            assert.throws(() => {
-                denyBasicIfBlahAndFancy.call({text: 'blah'});
-            }, denyBasicIfBlahAndFancy.permissionsError);
-        });
-
-        it('CANNOT call "denyBasicIfBlahAndFancy" when input is "sample"',
-            () => {
-            assert.throws(() => {
-                denyBasicIfBlahAndFancy.call({text: 'sample'});
-            }, denyBasicIfBlahAndFancy.permissionsError);
-        });
+        tearDownUserTest();
     });
 }
 
