@@ -10,26 +10,6 @@ If you do not need to check for special conditions and would like a simpler way 
 $ meteor add didericis:permissions-mixin
 ```
 
-##### **NOTE**:
-
-If you'd like to make sure no methods can be called unless their permissions have been explicitly set, it's probably a good idea to create a method that automatically adds `PermissionsMixin`:
-
-```js
-SecuredMethod = class SecuredMethod extends ValidateMethod {
-    constructor(methodDefinition) {
-        if (Array.isArray(methodDefinition.mixins)) {
-            methodDefiniton.mixins = methodDefinition.mixins.concat(PermissionsMixin);
-        } else {
-            methodDefiniton.mixins = [PermissionsMixin];
-        }
-        super(methodDefinition);
-    }
-}
-```
-
-This allows you to more easily tell what has been secured and what hasn't and encourages you to always explicitly define permissions.
-
-
 ## Define
 
 #### Method
@@ -124,7 +104,7 @@ const allowIfLoggedIn = new ValidatedMethod({
 
 #### Deny
 
-##### **IMPORTANT NOTE**: In general, it is better to use `allow` than a `deny`.
+##### **IMPORTANT NOTE**: In general, it is better to use `allow` than `deny`.
 
 ```js
 const denyBasicIfBlahAndFancy = new ValidatedMethod({
@@ -172,7 +152,27 @@ myMethod = new ValidatedMethod({
 });
 ```
 
-## Runing Tests
+## Adding a SecuredMethod
+
+If you'd like to make sure no methods can be called unless their permissions have been explicitly set, it's probably a good idea to create a method that automatically adds `PermissionsMixin`:
+
+```js
+SecuredMethod = class SecuredMethod extends ValidateMethod {
+    constructor(methodDefinition) {
+        if (Array.isArray(methodDefinition.mixins)) {
+            methodDefiniton.mixins = methodDefinition.mixins.concat(PermissionsMixin);
+        } else {
+            methodDefiniton.mixins = [PermissionsMixin];
+        }
+        super(methodDefinition);
+    }
+}
+```
+
+This allows you to more easily tell what has been secured and what hasn't and encourages you to always explicitly define permissions.
+
+
+## Running Tests
 
 To run tests, make sure the mdg:validated-method package has been updated (`meteor update mdg:validated-method`) and then run:
 
