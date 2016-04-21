@@ -10,6 +10,26 @@ If you do not need to check for special conditions and would like a simpler way 
 $ meteor add didericis:permissions-mixin
 ```
 
+##### **NOTE**:
+
+If you'd like to make sure no methods can be called unless their permissions have been explicitly set, it's probably a good idea to create a method that automatically adds `PermissionsMixin`:
+
+```js
+SecuredMethod = class SecuredMethod extends ValidateMethod {
+    constructor(methodDefinition) {
+        if (Array.isArray(methodDefinition.mixins)) {
+            methodDefiniton.mixins = methodDefinition.mixins.concat(PermissionsMixin);
+        } else {
+            methodDefiniton.mixins = [PermissionsMixin];
+        }
+        super(methodDefinition);
+    }
+}
+```
+
+This allows you to more easily tell what has been secured and what hasn't and encourages you to always explicitly define permissions.
+
+
 ## Define
 
 #### Method
@@ -18,8 +38,8 @@ $ meteor add didericis:permissions-mixin
 const method = new ValidatedMethod({
     mixins: [PermissionsMixin],
     name,
-    allow,            //optional array of permission objects
-    deny,             //optional array of permission objects (will be ignored if allow is present
+    allow,            //optional array of permission objects (Cannot use with deny)
+    deny,             //optional array of permission objects (Cannot use with allow)
     permissionsError, //optional custom error message
     validate,
     run
@@ -30,8 +50,8 @@ const method = new ValidatedMethod({
 
 ```js
 {
-    roles,              //array of strings
-    group,              //string
+    roles,              //either true, a string, or an array of strings
+    group,              //either true, a string, or an array of strings
     allow               //function that accepts the methods input and returns a boolean
 }
 ```
@@ -40,11 +60,17 @@ const method = new ValidatedMethod({
 
 ```js
 {
-    roles,              //array of strings
-    group,              //string
+    roles,              //either true, a string, or an array of strings
+    group,              //either true, a string, or an array of strings
     deny                //function that accepts the methods input and returns a boolean
 }
 ```
+
+If roles is set to `true`, the permissions object will target all users within the group/groups given (or all groups is groups is set to `true`. This is the same as what the `PermissionsMixin.LoggedIn` method does. Scroll down to see an example).
+
+If roles is set to a string, the permissions object will target all users with that particular role in the group/groups given (or all groups is groups is set to `true`);
+
+If roles is set to an array of string, the permissions object will target all users with those particular roles in the group/groups given (or all groups is groups is set to `true`);
 
 ## Examples
 
@@ -80,7 +106,25 @@ All other users will be denied.
 
 To allow all users, set allow to `true` instead of an array of permissions objects.
 
+To allow only logged in users, you can use the following syntax:
+
+```js
+const allowIfLoggedIn = new ValidatedMethod({
+    name: 'AllowIfLoggedIn',
+    mixins: [PermissionsMixin],
+    allow: PermissionsMixin.LoggedIn
+    validate: new SimpleSchema({
+        text: { type: String }
+    }).validator(),
+    run({text}) {
+        return testCollection.insert({text: text});
+    }
+});
+```
+
 #### Deny
+
+##### **IMPORTANT NOTE**: In general, it is better to use `allow` than a `deny`.
 
 ```js
 const denyBasicIfBlahAndFancy = new ValidatedMethod({
