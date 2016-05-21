@@ -71,7 +71,7 @@ PermissionsMixin = function(methodOptions) {
         // A user with a particular role in a particular arry of groups
         if ((typeof roles === 'string') && Array.isArray(group)) {
             var isInRoleInGroupArray = Roles.userIsInRole(userId, roles);
-            groups.forEach(function(_group) {
+            group.forEach(function(_group) {
                 isInRoleInGroupArray =
                     Roles.userIsInRole(userId, roles, _group);
             });
@@ -98,7 +98,7 @@ PermissionsMixin = function(methodOptions) {
         if (Array.isArray(roles) && Array.isArray(group)) {
             var isInRoleArrayInGroupArray =
                 Roles.userIsInRole(userId, roles);
-            groups.forEach(function(_group) {
+            group.forEach(function(_group) {
                 isInRoleArrayInGroupArray =
                     Roles.userIsInRole(userId, roles, _group);
             });
