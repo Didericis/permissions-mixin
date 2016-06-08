@@ -18,7 +18,7 @@ PermissionsMixin = function(methodOptions) {
                     try {
                         check(permitDoc, {
                             roles: Match.OneOf([String], String, Boolean),
-                            group:  Match.OneOf([String], String, Boolean),
+                            group:  Match.OneOf([String], String, Boolean, Function),
                             [methodOptionName]: Match.Optional(Function)
                         });
                     } catch(e) {
@@ -31,6 +31,8 @@ PermissionsMixin = function(methodOptions) {
 
     const isInRole = function isInRole({userId, roles, group}) {
         var allUserGroups = Roles.getGroupsForUser(userId);
+
+        console.log(group);
 
         // Any logged in user
         if ((roles === true) && (group === true)) {
@@ -107,8 +109,13 @@ PermissionsMixin = function(methodOptions) {
     }
 
     const isRole = function isRole(option, roleDoc, userId, args) {
-        const { roles, group } = roleDoc;
+        const { roles } = roleDoc;
+        let { group } = roleDoc;
         const func = roleDoc[option];
+
+        if (typeof group === 'function'){
+            group = group.apply({userId: userId}, args);
+        }
 
         // Check to see if this role doc applies to this user
         if (isInRole({userId, roles, group})) {
