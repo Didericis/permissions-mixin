@@ -32,8 +32,6 @@ PermissionsMixin = function(methodOptions) {
     const isInRole = function isInRole({userId, roles, group}) {
         var allUserGroups = Roles.getGroupsForUser(userId);
 
-        console.log(group);
-
         // Any logged in user
         if ((roles === true) && (group === true)) {
             return !!userId;
