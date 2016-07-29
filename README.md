@@ -157,12 +157,12 @@ myMethod = new ValidatedMethod({
 If you'd like to make sure no methods can be called unless their permissions have been explicitly set, it's probably a good idea to create a method that automatically adds `PermissionsMixin`:
 
 ```js
-SecuredMethod = class SecuredMethod extends ValidateMethod {
+SecuredMethod = class SecuredMethod extends ValidatedMethod {
     constructor(methodDefinition) {
         if (Array.isArray(methodDefinition.mixins)) {
-            methodDefiniton.mixins = methodDefinition.mixins.concat(PermissionsMixin);
+            methodDefinition.mixins = methodDefinition.mixins.concat(PermissionsMixin);
         } else {
-            methodDefiniton.mixins = [PermissionsMixin];
+            methodDefinition.mixins = [PermissionsMixin];
         }
         super(methodDefinition);
     }
