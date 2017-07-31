@@ -1,7 +1,7 @@
 Package.describe({
   name: 'didericis:permissions-mixin',
-  version: '1.1.0',
-  summary: 'A permissions mixin to use with mdg:validated-method package',
+  version: '1.1.1',
+  summary: 'mdg:validated-method mixin for declaratively defining method permissions based on roles',
   git: 'https://github.com/didericis/permissions-mixin.git',
   documentation: 'README.md'
 });
