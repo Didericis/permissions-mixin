@@ -2,8 +2,6 @@
 
 This is a mixin for meteor's [mdg:validated-method](https://github.com/meteor/validated-method). It uses the [alanning:roles](https://github.com/alanning/meteor-roles) package and allows you to define what users with what roles are allowed or denied use of your method, and under what conditions. 
 
-If you do not need to check for special conditions and would like a simpler way to check to see if a user is permitted to use certain methods, check out [tunifight:loggedin-mixin](https://atmospherejs.com/tunifight/loggedin-mixin).
-
 ## Install
 
 ```sh
