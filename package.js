@@ -8,7 +8,7 @@ Package.describe({
 
 Package.onUse(function(api) {
   api.versionsFrom('1.2.1');
-  api.use(['ecmascript', 'check', 'underscore']);
+  api.use(['ecmascript', 'check']);
   api.use('alanning:roles@1.2.0');
   api.use('mdg:validated-method@1.1.0');
   api.addFiles('permissions-mixin.js');
